@@ -2,51 +2,37 @@ package proxmox
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/sp-yduck/proxmox/pkg/service"
+	// "github.com/sp-yduck/proxmox/pkg/service/node/vm"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	cloudprovider "k8s.io/cloud-provider"
 )
 
 type instance struct {
+	compute *service.Service
 }
 
-func newInstances() cloudprovider.Instances {
-	return &instance{}
+func newInstances(config proxmoxConfig) (cloudprovider.InstancesV2, error) {
+	svc, err := service.NewServiceWithLogin(config.URL, config.User, config.Password)
+	if err != nil {
+		return nil, err
+	}
+	return &instance{compute: svc}, nil
 }
 
-func (i *instance) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.NodeAddress, error) {
-	return []v1.NodeAddress{}, nil
-}
-
-func (i *instance) AddSSHKeyToAllInstances(ctx context.Context, user string, keyData []byte) error {
-	return cloudprovider.NotImplemented
-}
-
-func (i *instance) CurrentNodeName(ctx context.Context, hostname string) (types.NodeName, error) {
-	return types.NodeName(hostname), nil
-}
-
-func (i *instance) InstanceExistsByProviderID(ctx context.Context, providerID string) (bool, error) {
+func (i *instance) InstanceExists(ctc context.Context, node *v1.Node) (bool, error) {
 	return true, nil
 }
 
-func (i *instance) InstanceID(ctx context.Context, nodeName types.NodeName) (string, error) {
-	return "a;asdf", nil
+func (i *instance) InstanceShutdown(ctx context.Context, node *v1.Node) (bool, error) {
+	return false, nil
 }
 
-func (i *instance) InstanceShutdownByProviderID(ctx context.Context, providerID string) (bool, error) {
-	return true, nil
-}
-
-func (i *instance) InstanceType(ctx context.Context, name types.NodeName) (string, error) {
-	return ";lkj", nil
-}
-
-func (i *instance) InstanceTypeByProviderID(ctx context.Context, providerID string) (string, error) {
-	return "asdf", nil
-}
-
-func (i *instance) NodeAddressesByProviderID(ctx context.Context, providerID string) ([]v1.NodeAddress, error) {
-	return []v1.NodeAddress{}, nil
+func (i *instance) InstanceMetadata(ctx context.Context, node *v1.Node) (*cloudprovider.InstanceMetadata, error) {
+	providerID := fmt.Sprintf("%s://%s", ProviderName, node.Status.NodeInfo.SystemUUID)
+	return &cloudprovider.InstanceMetadata{
+		ProviderID: providerID,
+	}, nil
 }

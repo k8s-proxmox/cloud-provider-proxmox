@@ -3,7 +3,10 @@ module github.com/sp-yduck/cloud-provider-proxmox
 go 1.20
 
 require (
+	github.com/pkg/errors v0.9.1
+	github.com/sp-yduck/proxmox v0.0.0-20230702124708-d086ca37fd8f
 	github.com/spf13/pflag v1.0.5
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.27.3
 	k8s.io/apimachinery v0.27.3
 	k8s.io/cloud-provider v0.27.3
@@ -57,7 +60,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.5 // indirect
 	github.com/onsi/gomega v1.27.7 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.15.1 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
@@ -95,7 +97,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiserver v0.27.3 // indirect
 	k8s.io/client-go v0.27.3 // indirect
 	k8s.io/component-helpers v0.27.3 // indirect

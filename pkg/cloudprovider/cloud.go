@@ -3,6 +3,8 @@ package proxmox
 import (
 	"io"
 
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
 	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog/v2"
 )
@@ -23,24 +25,60 @@ const (
 )
 
 type Proxmox struct {
-	instances cloudprovider.Instances
+	instancesV2 cloudprovider.InstancesV2
+}
+
+type cloudProviderConfig struct {
+	ProxmoxConfig proxmoxConfig `yaml:"proxmox"`
+}
+
+type proxmoxConfig struct {
+	URL      string `yaml:"url"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
 }
 
 func init() {
 	klog.Info("registering cloud provider")
+
 	cloudprovider.RegisterCloudProvider(RegisteredProviderName, func(config io.Reader) (cloudprovider.Interface, error) {
-		return newCloud(config)
+		providerConfig, err := readCloudProviderConfig(config)
+		if err != nil {
+			return nil, err
+		}
+		return newCloud(providerConfig)
 	})
 }
 
-func newCloud(configReader io.Reader) (cloudprovider.Interface, error) {
+func newCloud(config *cloudProviderConfig) (cloudprovider.Interface, error) {
 	klog.Info("creating new cloud")
-	return newProxmox()
+	instance, err := newInstances(config.ProxmoxConfig)
+	if err != nil {
+		return nil, err
+	}
+	px := &Proxmox{instancesV2: instance}
+	return px, nil
 }
 
-func newProxmox() (*Proxmox, error) {
-	px := &Proxmox{}
-	return px, nil
+func readCloudProviderConfig(configReader io.Reader) (*cloudProviderConfig, error) {
+	config := &cloudProviderConfig{}
+	if configReader == nil {
+		return nil, errors.New("configReader must not be nil")
+	}
+	if err := yaml.NewDecoder(configReader).Decode(config); err != nil {
+		return nil, err
+	}
+	cfg := config.ProxmoxConfig
+	if cfg.Password == "" {
+		return nil, errors.New("password must not be empty")
+	}
+	if cfg.URL == "" {
+		return nil, errors.New("url must not be empty")
+	}
+	if cfg.User == "" {
+		return nil, errors.New("user must not be empty")
+	}
+	return config, nil
 }
 
 func (px *Proxmox) Initialize(clientBuilder cloudprovider.ControllerClientBuilder, stop <-chan struct{}) {
@@ -55,13 +93,13 @@ func (px *Proxmox) LoadBalancer() (cloudprovider.LoadBalancer, bool) {
 // Instances returns an instances interface. Also returns true if the
 // interface is supported, false otherwise.
 func (px *Proxmox) Instances() (cloudprovider.Instances, bool) {
-	return px.instances, true
+	return nil, false
 }
 
 // Instances returns an instances interface. Also returns true if the
 // interface is supported, false otherwise.
 func (px *Proxmox) InstancesV2() (cloudprovider.InstancesV2, bool) {
-	return nil, false
+	return px.instancesV2, true
 }
 
 // Zones returns a zones interface. Also returns true if the interface

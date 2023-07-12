@@ -37,14 +37,31 @@ spec:
       serviceAccountName: cloud-controller-manager
       containers:
       - name: cloud-controller-manager
-        image: spyduck/cloud-provider-proxmox:v0.0.1-alpha4
+        image: spyduck/cloud-provider-proxmox:latest
         command:
         - /usr/local/bin/cloud-controller-manager
         - --cloud-provider=proxmox
+        - --cloud-config=/etc/proxmox/config.yaml
         - --leader-elect=true
         - --use-service-account-credentials=true
         - --allocate-node-cidrs=false
         - --configure-cloud-routes=false
+        volumeMounts:
+          - name: cloud-config
+            mountPath: /etc/proxmox
+            readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10258
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          periodSeconds: 30
+          timeoutSeconds: 5
+      volumes:
+        - name: cloud-config
+          secret:
+            secretName: cloud-config
       tolerations:
       - key: node.cloudprovider.kubernetes.io/uninitialized
         value: "true"
@@ -57,3 +74,12 @@ spec:
         effect: NoSchedule
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloud-conkfig
+  namespace: kube-system
+data:
+  config.yaml: <base64 encoded yaml>
+      
