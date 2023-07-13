@@ -125,11 +125,6 @@ func (px *Proxmox) ProviderName() string {
 	return ProviderName
 }
 
-// ScrubDNS
-func (px *Proxmox) ScrubDNS(nameservers, searches []string) (nsOut, srchOut []string) {
-	return nil, nil
-}
-
 // HasClusterID returns true if a ClusterID is required and set/
 func (px *Proxmox) HasClusterID() bool {
 	return true

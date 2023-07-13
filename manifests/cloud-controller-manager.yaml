@@ -2,20 +2,20 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: cloud-controller-manager
+  name: proxmox-cloud-controller-manager
   namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: system:cloud-controller-manager
+  name: system:proxmox-cloud-controller-manager
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin
 subjects:
 - kind: ServiceAccount
-  name: cloud-controller-manager
+  name: proxmox-cloud-controller-manager
   namespace: kube-system
 ---
 apiVersion: apps/v1
@@ -34,7 +34,7 @@ spec:
       labels:
         k8s-app: cloud-controller-manager
     spec:
-      serviceAccountName: cloud-controller-manager
+      serviceAccountName: proxmox-cloud-controller-manager
       containers:
       - name: cloud-controller-manager
         image: spyduck/cloud-provider-proxmox:latest
@@ -43,9 +43,8 @@ spec:
         - --cloud-provider=proxmox
         - --cloud-config=/etc/proxmox/config.yaml
         - --leader-elect=true
-        - --use-service-account-credentials=true
-        - --allocate-node-cidrs=false
-        - --configure-cloud-routes=false
+        - --use-service-account-credentials
+        - --controllers=cloud-node,cloud-node-lifecycle
         volumeMounts:
           - name: cloud-config
             mountPath: /etc/proxmox
@@ -78,7 +77,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: cloud-conkfig
+  name: cloud-config
   namespace: kube-system
 data:
   config.yaml: <base64 encoded yaml>
