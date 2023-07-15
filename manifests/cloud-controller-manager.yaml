@@ -79,6 +79,9 @@ kind: Secret
 metadata:
   name: cloud-config
   namespace: kube-system
-data:
-  config.yaml: <base64 encoded yaml>
-      
+stringData:
+  config.yaml: |
+    proxmox:
+      url: <proxmox.url:8006>
+      user: user@pam
+      password: password
