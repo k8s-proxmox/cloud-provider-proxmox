@@ -41,13 +41,13 @@ type proxmoxConfig struct {
 func init() {
 	klog.Info("registering cloud provider")
 
-	// cloudprovider.RegisterCloudProvider(RegisteredProviderName, func(config io.Reader) (cloudprovider.Interface, error) {
-	// 	providerConfig, err := readCloudProviderConfig(config)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	return newCloud(providerConfig)
-	// })
+	cloudprovider.RegisterCloudProvider(RegisteredProviderName, func(config io.Reader) (cloudprovider.Interface, error) {
+		providerConfig, err := readCloudProviderConfig(config)
+		if err != nil {
+			return nil, err
+		}
+		return newCloud(providerConfig)
+	})
 }
 
 func newCloud(config *cloudProviderConfig) (cloudprovider.Interface, error) {
