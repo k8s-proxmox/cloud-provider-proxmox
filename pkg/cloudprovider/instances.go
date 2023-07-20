@@ -3,13 +3,20 @@ package proxmox
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/sp-yduck/proxmox-go/rest"
 	v1 "k8s.io/api/core/v1"
 	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog/v2"
+)
+
+const (
+	UUIDFormat = `[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}`
 )
 
 type instance struct {
@@ -32,8 +39,43 @@ func newInstances(config proxmoxConfig) (cloudprovider.InstancesV2, error) {
 }
 
 func (i *instance) InstanceExists(ctc context.Context, node *v1.Node) (bool, error) {
-	klog.Info("checking if instance exists")
-	return true, nil
+	klog.Info("checking if instance exists (node=%s)", node.Name)
+
+	nodes, err := i.compute.GetNodes()
+	if err != nil {
+		return true, err
+	}
+	for _, n := range nodes {
+		vms, err := i.compute.GetVirtualMachines(n.Node)
+		if err != nil {
+			return true, err
+		}
+		for _, vm := range vms {
+			config, err := i.compute.GetVirtualMachineConfig(n.Node, vm.VMID)
+			if err != nil {
+				return true, err
+			}
+			smbios := config.SMBios1
+			uuid, err := convertSMBiosToUUID(smbios)
+			if err != nil {
+				return true, err
+			}
+			if uuid == node.Status.NodeInfo.SystemUUID {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func convertSMBiosToUUID(smbios string) (string, error) {
+	re := regexp.MustCompile(fmt.Sprintf("uuid=%s", UUIDFormat))
+	match := re.FindString(smbios)
+	if match == "" {
+		return "", errors.New("failed to fetch uuid form smbios")
+	}
+	// match: uuid=<uuid>
+	return strings.Split(match, "=")[1], nil
 }
 
 func (i *instance) InstanceShutdown(ctx context.Context, node *v1.Node) (bool, error) {
