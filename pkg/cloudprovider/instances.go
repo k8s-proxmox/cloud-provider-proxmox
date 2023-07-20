@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sp-yduck/proxmox-go/api"
 	"github.com/sp-yduck/proxmox-go/rest"
 	v1 "k8s.io/api/core/v1"
 	cloudprovider "k8s.io/cloud-provider"
@@ -41,31 +42,43 @@ func newInstances(config proxmoxConfig) (cloudprovider.InstancesV2, error) {
 func (i *instance) InstanceExists(ctc context.Context, node *v1.Node) (bool, error) {
 	klog.Info("checking if instance exists (node=%s)", node.Name)
 
+	_, err := i.getVMFromUUID(node.Status.NodeInfo.SystemUUID)
+	if err != nil {
+		if rest.IsNotFound(err) {
+			return false, nil
+		}
+		return true, err
+	}
+
+	return true, nil
+}
+
+func (i *instance) getVMFromUUID(uuid string) (*api.VirtualMachine, error) {
 	nodes, err := i.compute.GetNodes()
 	if err != nil {
-		return true, err
+		return nil, err
 	}
 	for _, n := range nodes {
 		vms, err := i.compute.GetVirtualMachines(n.Node)
 		if err != nil {
-			return true, err
+			return nil, err
 		}
 		for _, vm := range vms {
 			config, err := i.compute.GetVirtualMachineConfig(n.Node, vm.VMID)
 			if err != nil {
-				return true, err
+				return nil, err
 			}
 			smbios := config.SMBios1
-			uuid, err := convertSMBiosToUUID(smbios)
+			vmuuid, err := convertSMBiosToUUID(smbios)
 			if err != nil {
-				return true, err
+				return nil, err
 			}
-			if uuid == node.Status.NodeInfo.SystemUUID {
-				return true, nil
+			if vmuuid == uuid {
+				return vm, nil
 			}
 		}
 	}
-	return false, nil
+	return nil, rest.NotFoundErr
 }
 
 func convertSMBiosToUUID(smbios string) (string, error) {
