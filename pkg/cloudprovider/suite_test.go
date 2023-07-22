@@ -1,46 +1,60 @@
 package proxmox
 
 import (
-	"crypto/tls"
-	"net/http"
 	"os"
 	"testing"
 
+	"github.com/sp-yduck/proxmox-go/proxmox"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/sp-yduck/proxmox-go/rest"
+	v1 "k8s.io/api/core/v1"
 )
 
 type TestSuite struct {
 	suite.Suite
 	instance instance
+	node     v1.Node
 }
 
 func (s *TestSuite) SetupSuite() {
+	s.setupInstance()
+	s.setupTestNode()
+}
+
+func (s *TestSuite) setupInstance() {
 	url := os.Getenv("PROXMOX_URL")
 	user := os.Getenv("PROXMOX_USERNAME")
 	password := os.Getenv("PROXMOX_PASSWORD")
-	if url == "" || user == "" || password == "" {
-		s.T().Fatalf("following env var must not be empty: PROXMOX_URL=%s, POXMOX_USERNAME=%s, PROXOMOX_PASSWORD=%s", url, user, password)
+	tokeid := os.Getenv("PROXMOX_TOKENID")
+	secret := os.Getenv("PROXMOX_SECRET")
+	if url == "" {
+		s.T().Fatal("url must not be empty")
+	}
+	authConfig := proxmox.AuthConfig{
+		Username: user,
+		Password: password,
+		TokenID:  tokeid,
+		Secret:   secret,
 	}
 
-	base := http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
+	svc, err := proxmox.NewService(url, authConfig, true)
+	if err != nil {
+		s.T().Logf("username=%s, password=%s, tokenid=%s, secret=%s", user, password, tokeid, secret)
+		s.T().Fatalf("failed to create rest client: %v", err)
+	}
+	s.instance.compute = svc
+}
+
+func (s *TestSuite) setupTestNode() {
+	uuid := os.Getenv("PROXMOX_TEST_UUID")
+	node := v1.Node{
+		Status: v1.NodeStatus{
+			NodeInfo: v1.NodeSystemInfo{
+				SystemUUID: uuid,
 			},
 		},
 	}
-
-	restclient, err := rest.NewRESTClient(url, rest.WithUserPassword(user, password), rest.WithClient(&base))
-	if err != nil {
-		s.T().Logf("url=%s", url)
-		s.T().Logf("user=%s", user)
-		s.T().Logf("password=%s", password)
-		s.T().Fatalf("failed to create rest client: %v", err)
-	}
-
-	s.instance.compute = restclient
+	node.SetName("test-node")
+	s.node = node
 }
 
 func TestSuiteIntegration(t *testing.T) {

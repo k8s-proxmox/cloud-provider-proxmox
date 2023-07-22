@@ -2,14 +2,10 @@ package proxmox
 
 import (
 	"context"
-	"crypto/tls"
-	"errors"
 	"fmt"
-	"net/http"
-	"regexp"
-	"strings"
 
 	"github.com/sp-yduck/proxmox-go/api"
+	"github.com/sp-yduck/proxmox-go/proxmox"
 	"github.com/sp-yduck/proxmox-go/rest"
 	v1 "k8s.io/api/core/v1"
 	cloudprovider "k8s.io/cloud-provider"
@@ -17,32 +13,31 @@ import (
 )
 
 const (
-	UUIDFormat = `[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}`
+	Giga = 1024 * 1024 * 1024
 )
 
 type instance struct {
-	compute *rest.RESTClient
+	compute *proxmox.Service
 }
 
 func newInstances(config proxmoxConfig) (cloudprovider.InstancesV2, error) {
-	base := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
+	authConfig := proxmox.AuthConfig{
+		Username: config.User,
+		Password: config.Password,
+		TokenID:  config.TokenID,
+		Secret:   config.Secret,
 	}
-	client, err := rest.NewRESTClient(config.URL, rest.WithUserPassword(config.User, config.Password), rest.WithClient(base))
+	client, err := proxmox.NewService(config.URL, authConfig, true)
 	if err != nil {
 		return nil, err
 	}
 	return &instance{compute: client}, nil
 }
 
-func (i *instance) InstanceExists(ctc context.Context, node *v1.Node) (bool, error) {
-	klog.Info("checking if instance exists (node=%s)", node.Name)
+func (i *instance) InstanceExists(ctx context.Context, node *v1.Node) (bool, error) {
+	klog.Infof("checking if instance exists (node=%s)", node.Name)
 
-	_, err := i.getVMFromUUID(node.Status.NodeInfo.SystemUUID)
+	_, err := i.compute.VirtualMachineFromUUID(ctx, node.Status.NodeInfo.SystemUUID)
 	if err != nil {
 		if rest.IsNotFound(err) {
 			return false, nil
@@ -53,57 +48,41 @@ func (i *instance) InstanceExists(ctc context.Context, node *v1.Node) (bool, err
 	return true, nil
 }
 
-func (i *instance) getVMFromUUID(uuid string) (*api.VirtualMachine, error) {
-	nodes, err := i.compute.GetNodes()
-	if err != nil {
-		return nil, err
-	}
-	for _, n := range nodes {
-		vms, err := i.compute.GetVirtualMachines(n.Node)
-		if err != nil {
-			return nil, err
-		}
-		for _, vm := range vms {
-			config, err := i.compute.GetVirtualMachineConfig(n.Node, vm.VMID)
-			if err != nil {
-				return nil, err
-			}
-			smbios := config.SMBios1
-			vmuuid, err := convertSMBiosToUUID(smbios)
-			if err != nil {
-				return nil, err
-			}
-			if vmuuid == uuid {
-				return vm, nil
-			}
-		}
-	}
-	return nil, rest.NotFoundErr
-}
-
-func convertSMBiosToUUID(smbios string) (string, error) {
-	re := regexp.MustCompile(fmt.Sprintf("uuid=%s", UUIDFormat))
-	match := re.FindString(smbios)
-	if match == "" {
-		return "", errors.New("failed to fetch uuid form smbios")
-	}
-	// match: uuid=<uuid>
-	return strings.Split(match, "=")[1], nil
-}
-
 func (i *instance) InstanceShutdown(ctx context.Context, node *v1.Node) (bool, error) {
-	klog.Info("checking if instance is shutdowned")
-	return false, nil
+	klog.V(2).Info("InstanceShutdown called")
+
+	vm, err := i.compute.VirtualMachineFromUUID(ctx, node.Status.NodeInfo.SystemUUID)
+	if err != nil {
+		return false, err
+	}
+
+	shutdonw := vm.VM.Status == api.ProcessStatusStopped
+	return shutdonw, nil
 }
 
 func (i *instance) InstanceMetadata(ctx context.Context, node *v1.Node) (*cloudprovider.InstanceMetadata, error) {
 	providerID := fmt.Sprintf("%s://%s", ProviderName, node.Status.NodeInfo.SystemUUID)
 	klog.Infof("getting metadata for node %s (providerID=%s)", node.Name, providerID)
+
+	vm, err := i.compute.VirtualMachineFromUUID(ctx, node.Status.NodeInfo.SystemUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	cpu := vm.VM.Cpus
+	mem := roundBtoGB(vm.VM.MaxMem)
+	instanceType := fmt.Sprintf("proxmox-qemu.cpu-%d.mem-%s", cpu, mem)
+
 	return &cloudprovider.InstanceMetadata{
 		ProviderID:    providerID,
 		NodeAddresses: []v1.NodeAddress{},
-		InstanceType:  "",
+		InstanceType:  instanceType,
 		Zone:          "",
 		Region:        "",
 	}, nil
+}
+
+func roundBtoGB(size int) string {
+	rounded := float32(size) / Giga
+	return fmt.Sprintf("%.1fG", rounded)
 }

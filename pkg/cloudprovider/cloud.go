@@ -36,6 +36,8 @@ type proxmoxConfig struct {
 	URL      string `yaml:"url"`
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
+	TokenID  string `yaml:"tokenID"`
+	Secret   string `yaml:"secret"`
 }
 
 func init() {
@@ -69,14 +71,8 @@ func readCloudProviderConfig(configReader io.Reader) (*cloudProviderConfig, erro
 		return nil, err
 	}
 	cfg := config.ProxmoxConfig
-	if cfg.Password == "" {
-		return nil, errors.New("password must not be empty")
-	}
 	if cfg.URL == "" {
 		return nil, errors.New("url must not be empty")
-	}
-	if cfg.User == "" {
-		return nil, errors.New("user must not be empty")
 	}
 	return config, nil
 }

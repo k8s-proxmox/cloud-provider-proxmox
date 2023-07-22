@@ -82,6 +82,6 @@ metadata:
 stringData:
   config.yaml: |
     proxmox:
-      url: <proxmox.url:8006>
-      user: user@pam
-      password: password
+      url: https://X.X.X.X:8006/api2/json
+      tokenID: root@pam!api-token-id
+      secret: aaaaaaaaa-bbb-cccc-dddd-ef0123456789
