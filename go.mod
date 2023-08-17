@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/pkg/errors v0.9.1
-	github.com/sp-yduck/proxmox-go v0.0.0-alpha4
+	github.com/sp-yduck/proxmox-go v0.0.0-20230817151858-dfc9563487ca
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1
@@ -46,6 +46,7 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
