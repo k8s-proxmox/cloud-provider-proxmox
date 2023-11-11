@@ -27,7 +27,8 @@ func newInstances(config proxmoxConfig) (cloudprovider.InstancesV2, error) {
 		TokenID:  config.TokenID,
 		Secret:   config.Secret,
 	}
-	client, err := proxmox.NewService(config.URL, authConfig, true)
+	params := proxmox.NewParams(config.URL, authConfig, proxmox.ClientConfig{InsecureSkipVerify: true})
+	client, err := proxmox.GetOrCreateService(params)
 	if err != nil {
 		return nil, err
 	}
