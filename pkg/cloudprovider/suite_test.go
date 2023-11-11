@@ -36,7 +36,8 @@ func (s *TestSuite) setupInstance() {
 		Secret:   secret,
 	}
 
-	svc, err := proxmox.NewService(url, authConfig, true)
+	params := proxmox.NewParams(url, authConfig, proxmox.ClientConfig{InsecureSkipVerify: true})
+	svc, err := proxmox.NewService(params)
 	if err != nil {
 		s.T().Logf("username=%s, password=%s, tokenid=%s, secret=%s", user, password, tokeid, secret)
 		s.T().Fatalf("failed to create rest client: %v", err)
