@@ -2,7 +2,7 @@
 
 ## Proxmox Cloud Controller Manager
 
-This repository contains the Kubernetes cloud-controller-manager for Proxmox VE. Proxmox Cloud Controller Manager is compatible with [cluster-api-provider-proxmox](https://github.com/sp-yduck/cluster-api-provider-proxmox) so that machine controller of CAPI can match the nodes with their machine object. (See [machine-controller](https://cluster-api.sigs.k8s.io/developer/architecture/controllers/machine.html#machine--controller) for how it works)
+This repository contains the Kubernetes cloud-controller-manager for Proxmox VE. Proxmox Cloud Controller Manager is compatible with [cluster-api-provider-proxmox](https://github.com/k8s-proxmox/cluster-api-provider-proxmox) so that machine controller of CAPI can match the nodes with their machine object. (See [machine-controller](https://cluster-api.sigs.k8s.io/developer/architecture/controllers/machine.html#machine--controller) for how it works)
 
 ## Feature
 ### Node lifecycle controller

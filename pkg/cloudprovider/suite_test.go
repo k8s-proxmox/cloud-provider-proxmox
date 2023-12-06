@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sp-yduck/proxmox-go/proxmox"
+	"github.com/k8s-proxmox/proxmox-go/proxmox"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 )

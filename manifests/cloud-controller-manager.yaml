@@ -14,9 +14,9 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
 subjects:
-- kind: ServiceAccount
-  name: proxmox-cloud-controller-manager
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: proxmox-cloud-controller-manager
+    namespace: kube-system
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -36,41 +36,41 @@ spec:
     spec:
       serviceAccountName: proxmox-cloud-controller-manager
       containers:
-      - name: cloud-controller-manager
-        image: spyduck/cloud-provider-proxmox:latest
-        command:
-        - /usr/local/bin/cloud-controller-manager
-        - --cloud-provider=proxmox
-        - --cloud-config=/etc/proxmox/config.yaml
-        - --leader-elect=true
-        - --use-service-account-credentials
-        - --controllers=cloud-node,cloud-node-lifecycle
-        volumeMounts:
-          - name: cloud-config
-            mountPath: /etc/proxmox
-            readOnly: true
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 10258
-            scheme: HTTPS
-          initialDelaySeconds: 20
-          periodSeconds: 30
-          timeoutSeconds: 5
+        - name: cloud-controller-manager
+          image: ghcr.io/k8s-proxmox/cloud-provider-proxmox:latest
+          command:
+            - /usr/local/bin/cloud-controller-manager
+            - --cloud-provider=proxmox
+            - --cloud-config=/etc/proxmox/config.yaml
+            - --leader-elect=true
+            - --use-service-account-credentials
+            - --controllers=cloud-node,cloud-node-lifecycle
+          volumeMounts:
+            - name: cloud-config
+              mountPath: /etc/proxmox
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10258
+              scheme: HTTPS
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 5
       volumes:
         - name: cloud-config
           secret:
             secretName: cloud-config
       tolerations:
-      - key: node.cloudprovider.kubernetes.io/uninitialized
-        value: "true"
-        effect: NoSchedule
-      - key: node-role.kubernetes.io/control-plane
-        operator: Exists
-        effect: NoSchedule
-      - key: node-role.kubernetes.io/master
-        operator: Exists
-        effect: NoSchedule
+        - key: node.cloudprovider.kubernetes.io/uninitialized
+          value: "true"
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
 ---
