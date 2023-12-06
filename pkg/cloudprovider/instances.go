@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sp-yduck/proxmox-go/api"
-	"github.com/sp-yduck/proxmox-go/proxmox"
-	"github.com/sp-yduck/proxmox-go/rest"
+	"github.com/k8s-proxmox/proxmox-go/api"
+	"github.com/k8s-proxmox/proxmox-go/proxmox"
+	"github.com/k8s-proxmox/proxmox-go/rest"
 	v1 "k8s.io/api/core/v1"
 	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog/v2"

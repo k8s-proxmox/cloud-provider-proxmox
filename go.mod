@@ -1,10 +1,10 @@
-module github.com/sp-yduck/cloud-provider-proxmox
+module github.com/k8s-proxmox/cloud-provider-proxmox
 
 go 1.20
 
 require (
+	github.com/k8s-proxmox/proxmox-go v0.0.0-alpha25
 	github.com/pkg/errors v0.9.1
-	github.com/sp-yduck/proxmox-go v0.0.0-alpha22
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1
