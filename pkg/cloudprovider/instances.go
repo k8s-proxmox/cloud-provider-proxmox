@@ -76,7 +76,7 @@ func (i *instance) InstanceMetadata(ctx context.Context, node *v1.Node) (*cloudp
 
 	return &cloudprovider.InstanceMetadata{
 		ProviderID:    providerID,
-		NodeAddresses: []v1.NodeAddress{},
+		NodeAddresses: node.Status.Addresses,
 		InstanceType:  instanceType,
 		Zone:          "",
 		Region:        "",
