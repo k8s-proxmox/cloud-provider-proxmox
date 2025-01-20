@@ -3,7 +3,7 @@ module github.com/k8s-proxmox/cloud-provider-proxmox
 go 1.20
 
 require (
-	github.com/k8s-proxmox/proxmox-go v0.0.0-alpha25
+	github.com/k8s-proxmox/proxmox-go v0.0.0-alpha28
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
